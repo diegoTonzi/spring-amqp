@@ -1,10 +1,8 @@
 package br.com.poc.config.queue;
 
+import br.com.poc.config.AmqpConfig;
 import org.aopalliance.aop.Advice;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.FanoutExchange;
-import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -22,34 +20,36 @@ import java.util.Map;
 @Configuration
 public class OneQueueConfig {
 
-    public static final String BROADCAST_ONE_QUEUE = "rabbit.one.queue";
-    public static final String BROADCAST_ONE_QUEUE_DLQ = "rabbit.one.queue.dlq";
+    private static final String HEADER_FROM = "from";
+    private static final String HEADER_TO = "to";
+    public static final String QUEUE_ONE = "rabbit.one.queue";
+    public static final String QUEUE_ONE_DLQ = "rabbit.one.queue.dlq";
 
     private @Autowired ConnectionFactory connectionFactory;
     private @Autowired RabbitTemplate rabbitTemplate;
-    private @Autowired FanoutExchange fanoutExchange;
+    private @Autowired DirectExchange directExchange;
+    private @Autowired HeadersExchange headersExchange;
 
     @Bean
-    public Queue oneQueue() {
+    public Queue queueOne() {
         Map<String, Object> arguments = new HashMap<>();
-        arguments.put("x-dead-letter-exchange", BROADCAST_ONE_QUEUE_DLQ);
-        Queue queue = new Queue(BROADCAST_ONE_QUEUE, true, false, false, arguments);
-        return queue;
+        arguments.put("x-dead-letter-exchange", QUEUE_ONE_DLQ);
+        return new Queue(QUEUE_ONE, true, false, false, arguments);
     }
 
     @Bean
-    public Binding oneBinding() {
-        return BindingBuilder.bind(oneQueue()).to(fanoutExchange);
+    Binding bindingQueueOne() {
+        return BindingBuilder.bind(queueOne()).to(headersExchange).whereAll(HEADER_FROM, HEADER_TO).exist();
     }
 
     @Bean
-    Queue deadLetterQueueOne() {
-        return new Queue(BROADCAST_ONE_QUEUE_DLQ, true);
+    public Queue queueOneDlq() {
+        return new Queue(QUEUE_ONE_DLQ, true);
     }
 
     @Bean
-    public Binding deadLetterOneBinding() {
-        return BindingBuilder.bind(deadLetterQueueOne()).to(fanoutExchange);
+    Binding bindingDlq() {
+        return BindingBuilder.bind(queueOneDlq()).to(directExchange).withQueueName();
     }
 
     @Bean
@@ -57,8 +57,8 @@ public class OneQueueConfig {
     public SimpleRabbitListenerContainerFactory oneContainerFactory() {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
-        factory.setConcurrentConsumers(1);
-        factory.setMaxConcurrentConsumers(1);
+        factory.setConcurrentConsumers(3);
+        factory.setMaxConcurrentConsumers(10);
         Advice[] adviceChain = { oneInterceptor() };
         factory.setAdviceChain(adviceChain);
         return factory;
@@ -69,7 +69,7 @@ public class OneQueueConfig {
         return RetryInterceptorBuilder.stateless()
                 .backOffOptions(3000L, 3L, 10000L)
                 .maxAttempts(5)
-                .recoverer(new RepublishMessageRecoverer(rabbitTemplate, deadLetterQueueOne().getName(), deadLetterQueueOne().getName()))
+                .recoverer(new RepublishMessageRecoverer(rabbitTemplate, directExchange.getName(), queueOneDlq().getName()))
                 .build();
     }
 

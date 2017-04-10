@@ -11,12 +11,12 @@ import java.util.Date;
 @Component
 public class TwoConsumer {
 
-	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-
-	@RabbitListener(containerFactory = "twoContainerFactory", queues = {TwoQueueConfig.BROADCAST_TWO_QUEUE})
-	public void twoConsumer(Message message) throws Exception {
-		System.out.println("Msg received on 'twoConsumer' at " + dateFormat.format(new Date()));
-		throw  new Exception("some consumer exception");
-	}
+//	private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+//
+//	@RabbitListener(containerFactory = "twoContainerFactory", queues = {TwoQueueConfig.QUEUE_TWO})
+//	public void twoConsumer(Message message) throws Exception {
+//		System.out.println("Msg received on 'twoConsumer' at " + dateFormat.format(new Date()));
+//		throw  new Exception("some consumer exception");
+//	}
 
 }

@@ -1,6 +1,5 @@
 package br.com.poc.config;
 
-import br.com.poc.producer.Producer;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,7 +11,8 @@ public class AmqpApplication {
 
     public static void main(String[] args) throws InterruptedException {
         ConfigurableApplicationContext context = SpringApplication.run(AmqpApplication.class, args);
-        context.getBean(Producer.class).produceToQueueOne("send to extchange one");
+//        context.getBean(Producer.class).produceToQueueOne("send to extchange one");
+//        context.getBean(Producer.class).produceToQueueTwo("send to extchange two");
     }
 
 }

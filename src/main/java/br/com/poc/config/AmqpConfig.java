@@ -1,6 +1,6 @@
 package br.com.poc.config;
 
-import org.springframework.amqp.core.FanoutExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -11,7 +11,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AmqpConfig {
 
-    public static final String BROADCAST_EXCHANGE = "amqp.exchange.one";
+
+    public static final String EXCHANGE = "exchange.a";
+    public static final String EXCHANGE_DLX = "exchange.a.dlx";
 
     @Autowired
     ConnectionFactory connectionFactory;
@@ -24,10 +26,16 @@ public class AmqpConfig {
     }
 
     @Bean
-    public FanoutExchange fanoutExchange() {
-        FanoutExchange exchange = new FanoutExchange(BROADCAST_EXCHANGE);
-        return exchange;
+    HeadersExchange exchange() {
+        return new HeadersExchange(EXCHANGE);
     }
+
+    @Bean
+    DirectExchange deadLetterexchange() {
+        return new DirectExchange(EXCHANGE_DLX);
+    }
+
+
 
     @Bean
     public Jackson2JsonMessageConverter messageConverter() {
